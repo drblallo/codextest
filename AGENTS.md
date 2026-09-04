@@ -177,6 +177,46 @@ Design rules:
    state)` and `apply(action, state)` then provide generic dispatch. Import
    `action` for the supporting helpers.
 
+### Model alternatives with `actions` blocks
+
+When several moves are available at the same suspension point, give each move
+its own action in an `actions` block. Do not encode the alternatives as a
+`Command`/`Choice` enum plus a union of placeholder arguments: that expands the
+action space, makes traces noisy, and permits meaningless argument combinations.
+
+```rlc
+while true:
+    actions:
+        act move_piece(Position destination) { board.can_move(destination) }
+            board.move(destination)
+        act draw_card() { deck.size() != 0 }
+            hand.add(deck.draw())
+        act pass()
+            break
+```
+
+An action inside the block owns the indented statements immediately below it.
+After one alternative runs, execution continues after the block; `break` in an
+alternative can exit an enclosing loop. Keep each signature decision-focused:
+`move_piece(destination)` should not also accept an action tag, active player,
+unused source when it is forced, or data belonging to other alternatives. Derive
+active actors and other forced values from state.
+
+### Store facts, derive views
+
+Avoid synchronized counters or phase labels when authoritative state already
+contains the answer. For example, calculate a player's remaining pieces from
+the pieces in play, a supply size from its live zones, a score from owned
+objects and awards, and setup progress from completed setup choices. Put these
+calculations on the class that owns the data (`board.piece_count(player)`,
+`player.hand_size()`) rather than in unrelated free functions.
+
+The same principle applies to action arguments. If turn order determines the
+actor, expose `choose_card(card)`, not `choose_card(player, card)`. Store a value
+only when history matters and current data cannot reconstruct it—for example,
+an award holder when tied players' counts do not reveal who acquired the award
+first.
+
 ### Treat decoded actions as untrusted input
 
 Static types constrain normal Rulebook code, but action values reconstructed
@@ -221,6 +261,32 @@ fuzz campaign; bounded types alone are not a serialization trust boundary.
   caller-owned data. Compile a tiny isolated example before relying on advanced
   `ctx`/subaction syntax because this area has evolved between releases.
 
+## Generated content and finite setup
+
+Treat randomized setup as part of the rules rather than installing convenient
+hard-coded content. Expose finite generation actions, consume the exact physical
+component inventories, and derive the next forced slot instead of accepting a
+redundant index. Depending on the game, validate tile or card multiplicities,
+special-piece placement, paired or multi-part components, topology constraints,
+and restrictions on which generated values may be adjacent or grouped.
+
+A locally legal generation choice can still create a partial state that cannot
+be completed. Add forward checking when constraints interact: before accepting
+a choice, prove that the remaining constrained pieces can fit in the remaining
+slots. At the transition from generation to play, run one comprehensive final
+validator. In debug builds, the verified assertion syntax is
+`assert(condition, "message")`; remember that optimized builds may remove this
+check, so action preconditions must independently prevent invalid construction.
+
+Test both sides of generation:
+
+- a complete legal fixture passes the comprehensive validator;
+- exhausted component types are rejected by `can`;
+- malformed raw enum values are rejected before counting or indexing;
+- corrupt inventories, forbidden adjacency, wrong special-piece locations, and
+  mismatched multi-part pieces fail validation; and
+- generated actions must finish before ordinary setup actions become available.
+
 ## Testing workflow
 
 ### Fast deterministic tests
@@ -254,6 +320,14 @@ the rule being proved and the important expected transition—not a line-by-line
 translation of the test. This makes a failing test useful to someone who does
 not yet know the game and helps reviewers notice when an assertion does not
 match its intended rule.
+
+Prefer exact semantic assertions over weak smoke checks. If an action should add
+three specific items, assert every item and the exact new total—not merely
+`total > 0`. Build well-formed fixtures: an ownership-dependent rule should use
+the complete structure that establishes ownership rather than setting only one
+cached or supporting field. When refactoring action signatures, replay every
+checked-in trace and compare the number of accepted actions with the number of
+nonempty trace lines.
 
 ### Compile and static diagnostics
 
@@ -325,6 +399,10 @@ transitions, and a terminal outcome, not merely prove that actions parse.
   a failing status. If compiler-rt fuzzer/ASan libraries are missing, use a
   compatible Clang/compiler-rt installation rather than dropping sanitizer
   instrumentation.
+  Run longer campaigns from a fresh process and watch peak RSS: the current
+  generated Python/ABI fuzz path can grow substantially over long runs. A clean,
+  completed bounded campaign is stronger evidence than a larger run killed by
+  the environment before final statistics are printed.
 - For a small finite game, use `enumerate(any_action)` on the generated
   `AnyGameAction`, copy each frontier state, and `apply` every legal action.
   This can exhaustively prove that no valid sequence reaches an assertion, but

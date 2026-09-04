@@ -1,0 +1,196 @@
+configure {player_count: 4}
+generate_terrain {terrain: brick}
+generate_terrain {terrain: lumber}
+generate_terrain {terrain: ore}
+generate_terrain {terrain: wool}
+generate_terrain {terrain: grain}
+generate_terrain {terrain: lumber}
+generate_terrain {terrain: wool}
+generate_terrain {terrain: brick}
+generate_terrain {terrain: ore}
+generate_terrain {terrain: desert}
+generate_terrain {terrain: grain}
+generate_terrain {terrain: wool}
+generate_terrain {terrain: lumber}
+generate_terrain {terrain: ore}
+generate_terrain {terrain: grain}
+generate_terrain {terrain: brick}
+generate_terrain {terrain: wool}
+generate_terrain {terrain: lumber}
+generate_terrain {terrain: grain}
+generate_number {token: five}
+generate_number {token: two}
+generate_number {token: six}
+generate_number {token: three}
+generate_number {token: eight}
+generate_number {token: ten}
+generate_number {token: nine}
+generate_number {token: twelve}
+generate_number {token: eleven}
+generate_number {token: four}
+generate_number {token: eight}
+generate_number {token: ten}
+generate_number {token: nine}
+generate_number {token: four}
+generate_number {token: five}
+generate_number {token: six}
+generate_number {token: three}
+generate_number {token: eleven}
+generate_harbor {harbor: generic}
+generate_harbor {harbor: generic}
+generate_harbor {harbor: generic}
+generate_harbor {harbor: generic}
+generate_harbor {harbor: brick}
+generate_harbor {harbor: lumber}
+generate_harbor {harbor: wool}
+generate_harbor {harbor: grain}
+generate_harbor {harbor: ore}
+setup_settlement {site: 0}
+setup_road {path: 0}
+setup_settlement {site: 2}
+setup_road {path: 1}
+setup_settlement {site: 4}
+setup_road {path: 3}
+setup_settlement {site: 6}
+setup_road {path: 6}
+setup_settlement {site: 8}
+setup_road {path: 8}
+setup_settlement {site: 10}
+setup_road {path: 11}
+setup_settlement {site: 12}
+setup_road {path: 13}
+setup_settlement {site: 14}
+setup_road {path: 16}
+roll {first: 1, second: 1}
+end_turn {}
+roll {first: 1, second: 2}
+end_turn {}
+roll {first: 2, second: 2}
+end_turn {}
+roll {first: 2, second: 3}
+end_turn {}
+roll {first: 2, second: 3}
+end_turn {}
+roll {first: 3, second: 3}
+end_turn {}
+roll {first: 2, second: 6}
+end_turn {}
+roll {first: 3, second: 6}
+end_turn {}
+roll {first: 4, second: 6}
+end_turn {}
+roll {first: 5, second: 6}
+end_turn {}
+roll {first: 1, second: 2}
+end_turn {}
+roll {first: 2, second: 2}
+end_turn {}
+roll {first: 2, second: 3}
+end_turn {}
+roll {first: 3, second: 3}
+end_turn {}
+roll {first: 2, second: 6}
+end_turn {}
+roll {first: 3, second: 6}
+end_turn {}
+roll {first: 4, second: 6}
+end_turn {}
+roll {first: 5, second: 6}
+end_turn {}
+roll {first: 1, second: 2}
+end_turn {}
+roll {first: 2, second: 2}
+end_turn {}
+roll {first: 2, second: 3}
+end_turn {}
+roll {first: 3, second: 3}
+end_turn {}
+roll {first: 2, second: 6}
+end_turn {}
+roll {first: 3, second: 6}
+end_turn {}
+roll {first: 4, second: 6}
+end_turn {}
+roll {first: 5, second: 6}
+end_turn {}
+roll {first: 1, second: 2}
+end_turn {}
+roll {first: 2, second: 2}
+end_turn {}
+roll {first: 2, second: 3}
+end_turn {}
+roll {first: 3, second: 3}
+end_turn {}
+roll {first: 2, second: 6}
+end_turn {}
+roll {first: 3, second: 6}
+end_turn {}
+roll {first: 4, second: 6}
+end_turn {}
+roll {first: 5, second: 6}
+end_turn {}
+roll {first: 1, second: 2}
+end_turn {}
+roll {first: 2, second: 2}
+end_turn {}
+roll {first: 2, second: 3}
+end_turn {}
+roll {first: 3, second: 3}
+end_turn {}
+roll {first: 2, second: 6}
+end_turn {}
+roll {first: 3, second: 6}
+end_turn {}
+roll {first: 4, second: 6}
+end_turn {}
+roll {first: 5, second: 6}
+end_turn {}
+roll {first: 1, second: 2}
+end_turn {}
+roll {first: 2, second: 2}
+end_turn {}
+roll {first: 2, second: 3}
+build_city {site: 0}
+build_city {site: 14}
+maritime_trade {give: brick, receive: lumber}
+build_road {path: 22}
+build_road {path: 38}
+end_turn {}
+roll {first: 3, second: 4}
+discard {resource: wool}
+discard {resource: wool}
+discard {resource: wool}
+discard {resource: wool}
+discard {resource: wool}
+discard {resource: wool}
+discard {resource: wool}
+discard {resource: brick}
+discard {resource: brick}
+discard {resource: brick}
+discard {resource: brick}
+discard {resource: brick}
+discard {resource: brick}
+discard {resource: brick}
+discard {resource: wool}
+discard {resource: wool}
+discard {resource: brick}
+discard {resource: brick}
+discard {resource: brick}
+discard {resource: brick}
+discard {resource: brick}
+discard {resource: brick}
+discard {resource: brick}
+discard {resource: wool}
+discard {resource: wool}
+discard {resource: lumber}
+discard {resource: lumber}
+discard {resource: lumber}
+discard {resource: lumber}
+discard {resource: lumber}
+discard {resource: lumber}
+move_robber {destination: 0, victim: 0, stolen: brick}
+end_turn {}
+roll {first: 3, second: 5}
+end_turn {}
+roll {first: 4, second: 5}
+end_turn {}
