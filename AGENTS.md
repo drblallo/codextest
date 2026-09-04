@@ -99,7 +99,7 @@ cls Board:
 fun add(Int left, Int right) -> Int:
     return left + right
 
-fun first_cell(ref Board board) -> ref Int:
+fun first_cell(Board board) -> ref Int:
     return board.cells[0]
 ```
 
@@ -116,7 +116,8 @@ fun first_cell(ref Board board) -> ref Int:
   board positions, choices, dice, cards, and other finite inputs.
 - Alternatives use `A | B` and can be narrowed with `if value is A:`. Enums are
   referenced as `Player::x` and expose `.value`.
-- Function arguments are written type-first and passed by reference. A return
+- Function arguments are written type-first and are already passed by reference;
+  do not prefix an argument type with `ref`. A return
   is copied unless its type is marked `ref`. Functions and methods use `fun`;
   declarations are `let value = expression` or `let value: Type`; references
   use `ref value = reference_expression`.
@@ -162,6 +163,9 @@ Design rules:
    will normally identify omissions. `frm` action arguments also become state.
 3. Put every legality constraint in the action precondition: turn ownership,
    bounds beyond the type's bounds, occupancy, resources, and phase rules.
+   Do not include an action argument when it is already determined by frame
+   state. For example, a two-player `place` action should use
+   `current_player` rather than accepting a caller-controlled player ID.
 4. Return from the action function when a win, loss, draw, or other terminal
    condition is reached. Otherwise `is_done()` will remain false.
 5. Make action parameters finite whenever possible. Generic enumeration,
@@ -172,6 +176,32 @@ Design rules:
    per action and an alternative such as `AnyGameAction`; `can apply(action,
    state)` and `apply(action, state)` then provide generic dispatch. Import
    `action` for the supporting helpers.
+
+### Treat decoded actions as untrusted input
+
+Static types constrain normal Rulebook code, but action values reconstructed
+from arbitrary serialized bytes can contain invalid raw enum values or invalid
+`.value` fields inside bounded integers. A `can apply(...)` call is only safe
+when its precondition validates those representations **before** using them as
+array indices or dispatch values.
+
+```rlc
+fun valid_cell(BInt<0, 10> cell) -> Bool:
+    return cell.value >= 0 and cell.value < 10
+
+fun valid_piece(Piece piece) -> Bool:
+    return piece.value >= 0 and piece.value < NUM_PIECES
+
+fun can_select(Board board, Piece piece, BInt<0, 10> cell) -> Bool:
+    if !valid_piece(piece) or !valid_cell(cell):
+        return false
+    return board.cells[cell.value] == 0
+```
+
+Keep these checks at the start of the helper called by the action precondition.
+Short-circuiting `or`/`and` then prevents unsafe indexing. Add a deterministic
+regression test that manually assigns malformed `.value` fields as well as a
+fuzz campaign; bounded types alone are not a serialization trust boundary.
 
 ## State ownership and composition
 
@@ -219,6 +249,12 @@ known to be invalid: debug builds abort on failed preconditions. Use `assert`
 inside rules for invariants that must hold for every valid trace; return
 `false` from `test_*` for ordinary test expectations.
 
+Put a short semantic comment immediately above each `test_*` function. State
+the rule being proved and the important expected transition—not a line-by-line
+translation of the test. This makes a failing test useful to someone who does
+not yet know the game and helps reviewers notice when an assertion does not
+match its intended rule.
+
 ### Compile and static diagnostics
 
 ```bash
@@ -249,13 +285,46 @@ Therefore ensure the game always terminates (or use a shell timeout while
 developing). `rlc-action` applies a trace and can list available actions;
 consult `rlc-action --help` for state load/save and pretty-print flags.
 
+Keep checked-in golden traces strict: include action lines only and replay them
+without `--ignore-invalid`. Use `--print-all` to confirm the number of accepted
+actions matches the number of trace lines. A trace should cover setup, normal
+transitions, and a terminal outcome, not merely prove that actions parse.
+
 ### Fuzzing and exhaustive exploration
 
 - For generic fuzzing, annotate the action function with `@classes`, import
-  `action`, define `fun fuzz(Vector<Byte> input)`, parse bytes into generated
-  action values, gate each with `can apply`, and compile with
-  `rlc game.rl --fuzzer -o game-fuzzer`. Run the resulting executable; a
-  discovered crash can be replayed by passing its trace/input file.
+  `action`, and expose the following target (replace `Game` if the generated
+  state type has another name):
+
+  ```rlc
+  fun fuzz(Vector<Byte> input):
+      if input.size() == 0:
+          return
+      let state = play()
+      let action: AnyGameAction
+      let parsed_actions = parse_actions(action, input)
+      for current_action in parsed_actions:
+          if can apply(current_action, state):
+              apply(current_action, state)
+  ```
+
+  `actions` is a language keyword, so use a name such as `parsed_actions` for
+  the local vector. Compile and run a bounded campaign with:
+
+  ```bash
+  rlc game.rl --fuzzer -o /tmp/game-fuzzer
+  test -x /tmp/game-fuzzer
+  /tmp/game-fuzzer -runs=100000 -max_len=4096 -timeout=10 \
+      -print_final_stats=1
+  ```
+
+  Always replay a discovered artifact directly after fixing it, then start a
+  fresh campaign. Do not report a successful fuzz run merely because compilation
+  returned zero: verify that the executable exists, because some `rlc` linker
+  failures have been observed to print missing-runtime errors without returning
+  a failing status. If compiler-rt fuzzer/ASan libraries are missing, use a
+  compatible Clang/compiler-rt installation rather than dropping sanitizer
+  instrumentation.
 - For a small finite game, use `enumerate(any_action)` on the generated
   `AnyGameAction`, copy each frontier state, and `apply` every legal action.
   This can exhaustively prove that no valid sequence reaches an assertion, but
@@ -271,11 +340,15 @@ consult `rlc-action --help` for state load/save and pretty-print flags.
 2. Write the smallest `act play() -> Game`, with explicit terminal returns and
    all persistent state marked `frm`.
 3. Add preconditions and verify both allowed and rejected inputs with `can`.
-4. Add deterministic `test_*() -> Bool` tests before adding more game phases.
+   Validate raw enum and bounded values before indexing, and derive action
+   parameters from frame state whenever possible.
+4. Add commented deterministic `test_*() -> Bool` tests before adding more game
+   phases.
 5. Run `rlc-test`, compile an unoptimized executable, and inspect the action
    graph when control flow is unclear.
 6. Run bounded random games and replay a trace with `rlc-action`.
-7. Use `@classes` plus exhaustive or fuzzer testing for rule-heavy components.
+7. Use `@classes` plus exhaustive or fuzzer testing for rule-heavy components;
+   replay every crash artifact after its fix and run a fresh fuzz campaign.
 8. Only then optimize with `-O2` or generate a shared library/wrapper for a
    host. Keep rendering and controller concerns outside the rulebook module.
 
@@ -286,6 +359,13 @@ consult `rlc-action --help` for state load/save and pretty-print flags.
   action argument `frm` because it crosses an action boundary.
 - **Action call aborts**: ask `can state.action(args)` first; inspect phase and
   precondition state. Do not suppress the check to hide a rules bug.
+- **Fuzzer crashes inside a precondition**: validate deserialized enum and
+  bounded `.value` fields before any array access. `can apply` invokes the
+  precondition; it cannot protect unsafe operations performed by that
+  precondition itself.
+- **`--fuzzer` prints linker errors but the command appears successful**: check
+  `test -x <output>`. Ensure the selected Clang has matching libFuzzer and ASan
+  compiler-rt archives.
 - **`rlc-random` cannot drive the game**: confirm the exact `play`/`Game`
   signature and replace unbounded action arguments (`Int`, arbitrary strings)
   with finite enums or bounded types.
@@ -308,4 +388,3 @@ consult `rlc-action --help` for state load/save and pretty-print flags.
 - Compiler and tool guide: <https://rl-language.github.io/rlc.html>
 - Board-game design notes: <https://rl-language.github.io/board_games.html>
 - Upstream compiler: <https://github.com/rl-language/rlc>
-
