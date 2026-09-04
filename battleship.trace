@@ -1,0 +1,47 @@
+place {ship: carrier, row: 0, column: 0, orientation: horizontal}
+place {ship: battleship, row: 1, column: 0, orientation: horizontal}
+place {ship: cruiser, row: 2, column: 0, orientation: horizontal}
+place {ship: submarine, row: 3, column: 0, orientation: horizontal}
+place {ship: destroyer, row: 4, column: 0, orientation: horizontal}
+place {ship: carrier, row: 0, column: 0, orientation: vertical}
+place {ship: battleship, row: 0, column: 2, orientation: vertical}
+place {ship: cruiser, row: 0, column: 4, orientation: vertical}
+place {ship: submarine, row: 0, column: 6, orientation: vertical}
+place {ship: destroyer, row: 0, column: 8, orientation: vertical}
+fire {row: 9, column: 9}
+fire {row: 9, column: 9}
+fire {row: 8, column: 8}
+fire {row: 8, column: 8}
+fire {row: 0, column: 0}
+fire {row: 0, column: 0}
+fire {row: 1, column: 0}
+fire {row: 0, column: 1}
+fire {row: 2, column: 0}
+fire {row: 0, column: 2}
+fire {row: 3, column: 0}
+fire {row: 0, column: 3}
+fire {row: 4, column: 0}
+fire {row: 0, column: 4}
+fire {row: 0, column: 2}
+fire {row: 1, column: 0}
+fire {row: 1, column: 2}
+fire {row: 1, column: 1}
+fire {row: 2, column: 2}
+fire {row: 1, column: 2}
+fire {row: 3, column: 2}
+fire {row: 1, column: 3}
+fire {row: 0, column: 4}
+fire {row: 2, column: 0}
+fire {row: 1, column: 4}
+fire {row: 2, column: 1}
+fire {row: 2, column: 4}
+fire {row: 2, column: 2}
+fire {row: 0, column: 6}
+fire {row: 3, column: 0}
+fire {row: 1, column: 6}
+fire {row: 3, column: 1}
+fire {row: 2, column: 6}
+fire {row: 3, column: 2}
+fire {row: 0, column: 8}
+fire {row: 4, column: 0}
+fire {row: 1, column: 8}
